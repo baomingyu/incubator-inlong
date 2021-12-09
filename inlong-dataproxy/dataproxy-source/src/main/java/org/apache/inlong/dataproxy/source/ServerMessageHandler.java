@@ -48,6 +48,9 @@ import org.apache.inlong.dataproxy.exception.ErrorCode;
 import org.apache.inlong.dataproxy.exception.MessageIDException;
 import org.apache.inlong.dataproxy.metrics.DataProxyMetricItem;
 import org.apache.inlong.dataproxy.metrics.DataProxyMetricItemSet;
+import org.apache.inlong.dataproxy.utils.MonitorIndex;
+import org.apache.inlong.dataproxy.utils.MonitorIndexExt;
+import org.apache.inlong.dataproxy.utils.NetworkUtils;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -72,10 +75,14 @@ public class ServerMessageHandler extends SimpleChannelHandler {
     private static final Logger logger = LoggerFactory.getLogger(ServerMessageHandler.class);
 
     private static final String DEFAULT_REMOTE_IP_VALUE = "0.0.0.0";
+
     private static final String DEFAULT_REMOTE_IDC_VALUE = "0";
+
     private static final ConfigManager configManager = ConfigManager.getInstance();
+
     private static final Joiner.MapJoiner mapJoiner = Joiner.on(AttributeConstants.SEPARATOR)
             .withKeyValueSeparator(AttributeConstants.KEY_VALUE_SEPARATOR);
+
     private static final Splitter.MapSplitter mapSplitter = Splitter
             .on(AttributeConstants.SEPARATOR)
             .trimResults().withKeyValueSeparator(AttributeConstants.KEY_VALUE_SEPARATOR);
@@ -87,6 +94,7 @@ public class ServerMessageHandler extends SimpleChannelHandler {
                     return new SimpleDateFormat("yyyyMMddHHmm");
                 }
             };
+
     private static final ThreadLocal<SimpleDateFormat> dateFormator4Transfer =
             new ThreadLocal<SimpleDateFormat>() {
                 @Override
@@ -95,27 +103,43 @@ public class ServerMessageHandler extends SimpleChannelHandler {
                 }
             };
     private AbstractSource source;
+
     private final ChannelGroup allChannels;
+
     private int maxConnections = Integer.MAX_VALUE;
+
     private boolean filterEmptyMsg = false;
+
     private final boolean isCompressed;
+
     private final ChannelProcessor processor;
-    private final ServiceDecoder serviceProcessor;
+
+    private final ServiceDecoder serviceDecoder;
+
     private final String defaultTopic;
+
     private String defaultMXAttr = "m=3";
+
     private final ChannelBuffer heartbeatBuffer;
+
     private final String protocolType;
+
+
+    private MonitorIndex monitorIndex;
+
+    private MonitorIndexExt monitorIndexExt;
+
     //
     private final DataProxyMetricItemSet metricItemSet;
 
-    public ServerMessageHandler(AbstractSource source, ServiceDecoder serProcessor,
-                                ChannelGroup allChannels,
-                                String topic, String attr, Boolean filterEmptyMsg, Integer maxMsgLength,
-                                Integer maxCons,
-                                Boolean isCompressed, String protocolType) {
+    public ServerMessageHandler(AbstractSource source, ServiceDecoder serviceDecoder,
+            ChannelGroup allChannels,
+            String topic, String attr, Boolean filterEmptyMsg,
+            Integer maxCons, Boolean isCompressed, MonitorIndex monitorIndex,
+            MonitorIndexExt monitorIndexExt, String protocolType) {
         this.source = source;
         this.processor = source.getChannelProcessor();
-        this.serviceProcessor = serProcessor;
+        this.serviceDecoder = serviceDecoder;
         this.allChannels = allChannels;
         this.defaultTopic = topic;
         if (null != attr) {
@@ -132,6 +156,8 @@ public class ServerMessageHandler extends SimpleChannelHandler {
         } else {
             this.metricItemSet = new DataProxyMetricItemSet(this.toString());
         }
+        this.monitorIndex = monitorIndex;
+        this.monitorIndexExt = monitorIndexExt;
     }
 
     private String getRemoteIp(Channel channel) {
@@ -428,11 +454,25 @@ public class ServerMessageHandler extends SimpleChannelHandler {
 
                 dtten = dtten / 1000 / 60 / 10;
                 dtten = dtten * 1000 * 60 * 10;
+                StringBuilder newbase = new StringBuilder();
+                newbase.append(protocolType).append(SEPARATOR)
+                        .append(topicEntry.getKey()).append(SEPARATOR)
+                        .append(streamIdEntry.getKey()).append(SEPARATOR)
+                        .append(strRemoteIP).append(SEPARATOR)
+                        .append(NetworkUtils.getLocalIp()).append(SEPARATOR)
+                        .append(new SimpleDateFormat("yyyyMMddHHmm")
+                                .format(dtten)).append(SEPARATOR).append(pkgTimeStr);
                 try {
                     processor.processEvent(event);
+                    monitorIndexExt.incrementAndGet("EVENT_SUCCESS");
                     this.addMetric(true, data.length);
+                    monitorIndex.addAndGet(new String(newbase),
+                            Integer.parseInt(proxyMetricMsgCnt), 1, data.length, 0);
                 } catch (Throwable ex) {
                     logger.error("Error writting to channel,data will discard.", ex);
+                    monitorIndexExt.incrementAndGet("EVENT_DROPPED");
+                    monitorIndex.addAndGet(new String(newbase), 0,0,0,
+                            Integer.parseInt(proxyMetricMsgCnt));
                     this.addMetric(false, data.length);
                     throw new ChannelException("ProcessEvent error can't write event to channel.");
                 }
@@ -552,7 +592,7 @@ public class ServerMessageHandler extends SimpleChannelHandler {
         Channel remoteChannel = e.getChannel();
         Map<String, Object> resultMap = null;
         try {
-            resultMap = serviceProcessor.extractData(cb, remoteChannel);
+            resultMap = serviceDecoder.extractData(cb, remoteChannel);
         } catch (MessageIDException ex) {
             this.addMetric(false, 0);
             throw new IOException(ex.getCause());
@@ -572,8 +612,6 @@ public class ServerMessageHandler extends SimpleChannelHandler {
         }
 
         if (MsgType.MSG_BIN_HEARTBEAT.equals(msgType)) {
-//            ChannelBuffer binBuffer = getBinHeart(resultMap,msgType);
-//            remoteChannel.write(binBuffer, remoteSocketAddress);
             this.addMetric(false, 0);
             return;
         }
@@ -597,14 +635,12 @@ public class ServerMessageHandler extends SimpleChannelHandler {
             formatMessagesAndSend(commonAttrMap, messageMap, strRemoteIP, msgType);
 
         } else if (msgList != null && commonAttrMap.containsKey(ConfigConstants.FILE_CHECK_DATA)) {
-//            logger.info("i am in FILE_CHECK_DATA ");
             Map<String, String> headers = new HashMap<String, String>();
             headers.put("msgtype", "filestatus");
             headers.put(ConfigConstants.FILE_CHECK_DATA,
                     "true");
             for (ProxyMessage message : msgList) {
                 byte[] body = message.getData();
-//                logger.info("data:"+new String(body));
                 Event event = EventBuilder.withBody(body, headers);
                 try {
                     processor.processEvent(event);
@@ -625,7 +661,6 @@ public class ServerMessageHandler extends SimpleChannelHandler {
                     "true");
             for (ProxyMessage message : msgList) {
                 byte[] body = message.getData();
-//                logger.info("data:"+new String(body));
                 Event event = EventBuilder.withBody(body, headers);
                 try {
                     processor.processEvent(event);
@@ -644,18 +679,25 @@ public class ServerMessageHandler extends SimpleChannelHandler {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
         logger.error("exception caught", e.getCause());
+        monitorIndexExt.incrementAndGet("EVENT_OTHEREXP");
     }
 
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
         logger.error("channel closed {}", ctx.getChannel());
+        super.channelClosed(ctx, e);
+        try {
+            e.getChannel().disconnect();
+            e.getChannel().close();
+        } catch (Exception ex) {
+            //
+        }
+        allChannels.remove(e.getChannel());
     }
 
     /**
      * addMetric
-     * 
-     * @param currentRecord
-     * @param topic
+     *
      * @param result
      * @param size
      */
