@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.apache.inlong.reco.dao.reco.ReconHumanNotifyDao">
+    <resultMap id="BaseResultMap" type="org.apache.inlong.reco.dto.StatusNotifyPo">
+        <result column="topo_name" jdbcType="VARCHAR" property="topoName"/>
+        <result column="group_id" jdbcType="VARCHAR" property="inLongGroupId"/>
+        <result column="stream_id" jdbcType="VARCHAR" property="inLongStreamId"/>
+        <result column="partition_value" jdbcType="VARCHAR" property="partition"/>
+        <result column="partition_day" jdbcType="VARCHAR" property="partitionDay"/>
+
+        <result column="us_task_id" jdbcType="VARCHAR" property="usTaskId"/>
+        <result column="send_msg_id" jdbcType="VARCHAR" property="sendMsgId"/>
+        <result column="sink_database" jdbcType="VARCHAR" property="database"/>
+        <result column="sink_table" jdbcType="VARCHAR" property="table"/>
+
+        <result column="is_delete" jdbcType="TINYINT" property="isDelete"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="modify_time" jdbcType="TIMESTAMP" property="modifyTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        topo_name, group_id, stream_id, partition_value, partition_day,
+        us_task_id, send_msg_id, sink_database, sink_table, is_delete,
+        create_time, modify_time
+    </sql>
+    <insert id="insert" parameterType="org.apache.inlong.reco.dto.StatusNotifyPo">
+    insert into audit_reco_human_notify(topo_name, group_id, stream_id, partition_value, partition_day,
+        us_task_id, send_msg_id, sink_database, sink_table, is_delete)
+    values (#{topoName,jdbcType=VARCHAR}, #{inLongGroupId,jdbcType=VARCHAR}, #{inLongStreamId,jdbcType=VARCHAR},
+        #{partition,jdbcType=VARCHAR}, #{partitionDay,jdbcType=VARCHAR}, #{usTaskId,jdbcType=VARCHAR},
+        #{sendMsgId,jdbcType=VARCHAR}, #{database,jdbcType=VARCHAR}, #{table,jdbcType=VARCHAR},
+        #{isDelete,jdbcType=TINYINT})
+        on duplicate key update send_msg_id = values(send_msg_id), modify_time = now()
+   </insert>
+</mapper>

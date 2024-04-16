@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.apache.inlong.reco.dao.reco.ReconStatusDao">
+    <resultMap id="BaseResultMap" type="org.apache.inlong.reco.dto.RecoStatusPo">
+        <result column="topo_name" jdbcType="VARCHAR" property="topoName"/>
+        <result column="group_id" jdbcType="VARCHAR" property="inLongGroupId"/>
+        <result column="stream_id" jdbcType="VARCHAR" property="inLongStreamId"/>
+        <result column="partition_value" jdbcType="VARCHAR" property="partitionValue"/>
+        <result column="partition_day" jdbcType="VARCHAR" property="partitionDay"/>
+
+        <result column="us_task_id" jdbcType="VARCHAR" property="usTaskId"/>
+        <result column="audit_source_id" jdbcType="VARCHAR" property="auditSourceId"/>
+        <result column="audit_sink_id" jdbcType="VARCHAR" property="auditSinkId"/>
+        <result column="audit_sink_abandon_id" jdbcType="VARCHAR" property="auditSinkAbandonId"/>
+        <result column="audit_tag" jdbcType="VARCHAR" property="auditTag"/>
+
+        <result column="audit_status" jdbcType="VARCHAR" property="auditStatus"/>
+        <result column="audit_type" jdbcType="VARCHAR" property="auditType"/>
+        <result column="sink_type" jdbcType="VARCHAR" property="sinkType"/>
+        <result column="cycle_unit" jdbcType="VARCHAR" property="cycleUnit"/>
+        <result column="receive_msg_id" jdbcType="VARCHAR" property="receiveMsgId"/>
+
+        <result column="send_msg_id" jdbcType="VARCHAR" property="sendMsgId"/>
+        <result column="sink_database" jdbcType="VARCHAR" property="database"/>
+        <result column="sink_table" jdbcType="VARCHAR" property="table"/>
+        <result column="cycle_number" jdbcType="INTEGER" property="cycleNumber"/>
+        <result column="partition_start_ms" jdbcType="BIGINT" property="partitionStartMs"/>
+
+        <result column="partition_end_ms" jdbcType="BIGINT" property="partitionEndMs"/>
+        <result column="audit_source_cnt" jdbcType="BIGINT" property="auditSourceCnt"/>
+        <result column="audit_sink_cnt" jdbcType="BIGINT" property="auditSinkCnt"/>
+        <result column="audit_sink_abandon_cnt" jdbcType="BIGINT" property="auditSinkAbandonCnt"/>
+        <result column="retry_time" jdbcType="INTEGER" property="retryTime"/>
+
+        <result column="max_retry_time" jdbcType="INTEGER" property="maxRetryTime"/>
+        <result column="msg_handler_tag" jdbcType="VARCHAR" property="msgHandlerTag"/>
+        <result column="check_ratio" jdbcType="DOUBLE" property="checkRatio"/>
+        <result column="is_delete" jdbcType="TINYINT" property="isDelete"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="modify_time" jdbcType="TIMESTAMP" property="modifyTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        topo_name, group_id, stream_id, partition_value, partition_day,
+        us_task_id, audit_source_id, audit_sink_id, audit_sink_abandon_id, audit_tag,
+        audit_status, audit_type, sink_type, cycle_unit, receive_msg_id,
+        send_msg_id, sink_database, sink_table, cycle_number, partition_start_ms,
+        partition_end_ms, audit_source_cnt, audit_sink_cnt, audit_sink_abandon_cnt, retry_time,
+        max_retry_time, msg_handler_tag, check_ratio, is_delete, create_time, modify_time
+    </sql>
+    <insert id="insert" parameterType="org.apache.inlong.reco.dto.RecoStatusPo">
+    insert into audit_reco_status(topo_name, group_id, stream_id, partition_value, partition_day,
+        us_task_id, audit_source_id, audit_sink_id, audit_sink_abandon_id, audit_tag,
+        audit_status, audit_type, sink_type, cycle_unit,receive_msg_id,
+        send_msg_id, sink_database, sink_table, cycle_number, partition_start_ms,
+        partition_end_ms, audit_source_cnt, audit_sink_cnt, audit_sink_abandon_cnt, retry_time,
+        max_retry_time, msg_handler_tag, check_ratio, is_delete)
+    values (#{topoName,jdbcType=VARCHAR}, #{inLongGroupId,jdbcType=VARCHAR}, #{inLongStreamId,jdbcType=VARCHAR},
+        #{partitionValue,jdbcType=VARCHAR}, #{partitionDay,jdbcType=VARCHAR}, #{usTaskId,jdbcType=VARCHAR},
+        #{auditSourceId,jdbcType=VARCHAR}, #{auditSinkId,jdbcType=VARCHAR}, #{auditSinkAbandonId,jdbcType=VARCHAR},
+        #{auditTag,jdbcType=VARCHAR}, #{auditStatus,jdbcType=VARCHAR}, #{auditType,jdbcType=VARCHAR},
+        #{sinkType,jdbcType=VARCHAR}, #{cycleUnit,jdbcType=VARCHAR}, #{receiveMsgId,jdbcType=VARCHAR},
+        #{sendMsgId,jdbcType=VARCHAR}, #{database,jdbcType=VARCHAR}, #{table,jdbcType=VARCHAR},
+        #{cycleNumber,jdbcType=INTEGER}, #{partitionStartMs,jdbcType=BIGINT}, #{partitionEndMs,jdbcType=BIGINT},
+        #{auditSourceCnt,jdbcType=BIGINT}, #{auditSinkCnt,jdbcType=BIGINT}, #{auditSinkAbandonCnt,jdbcType=BIGINT},
+        #{retryTime,jdbcType=INTEGER}, #{maxRetryTime,jdbcType=INTEGER}, #{msgHandlerTag,jdbcType=VARCHAR},
+        #{checkRatio,jdbcType=DOUBLE}, #{isDelete,jdbcType=TINYINT}
+        )
+        on duplicate key update audit_tag = values(audit_tag), modify_time = now()
+   </insert>
+
+
+    <select id="selectRecoData" resultType="org.apache.inlong.reco.dto.RecoStatusPo">
+        select
+        <include refid="Base_Column_List" />
+        from audit_reco_status
+        <where>
+            <if test="inLongGroupId != null">
+                And group_id = #{inLongGroupId,jdbcType=VARCHAR}
+            </if>
+            <if test="inLongStreamId != null">
+                And stream_id = #{inLongStreamId,jdbcType=VARCHAR}
+            </if>
+            <if test="isDelete != null">
+                And is_delete = #{isDelete,jdbcType=TINYINT}
+            </if>
+            <if test="auditStatus != null">
+                And audit_status = #{auditStatus,jdbcType=VARCHAR}
+            </if>
+            <if test="partitionDay != null">
+                and partition_day = #{partitionDay,jdbcType=VARCHAR}
+            </if>
+            <if test="partitionValue != null">
+                and partition_value = #{partitionValue,jdbcType=VARCHAR}
+            </if>
+        </where>
+    </select>
+
+    <update id="updateRecoStatus" parameterType="org.apache.inlong.reco.dto.RecoStatusPo">
+        update audit_reco_status
+        <set >
+            <if test="retryTime != null">
+                retry_time = #{retryTime},
+            </if>
+            <if test="maxRetryTime != null">
+                max_retry_time = #{maxRetryTime},
+            </if>
+            <if test="auditType != null">
+                audit_type = #{auditType},
+            </if>
+            <if test="sinkType != null">
+                sink_type = #{sinkType},
+            </if>
+            <if test="database != null">
+                sink_database = #{database},
+            </if>
+            <if test="table != null">
+                sink_table = #{table},
+            </if>
+            <if test="cycleUnit != null">
+                cycle_unit = #{cycleUnit},
+            </if>
+            <if test="cycleNumber != null">
+                cycle_number = #{cycleNumber},
+            </if>
+            <if test="isDelete != null">
+                is_delete = #{isDelete},
+            </if>
+            <if test="checkRatio != null">
+                check_ratio = #{checkRatio},
+            </if>
+            <if test="auditStatus != null">
+                audit_status = #{auditStatus},
+            </if>
+            <if test="sendMsgId != null">
+                send_msg_id = #{sendMsgId},
+            </if>
+            <if test="receiveMsgId != null">
+                receive_msg_id = #{receiveMsgId},
+            </if>
+            <if test="auditSourceCnt != null">
+                audit_source_cnt = #{auditSourceCnt},
+            </if>
+            <if test="auditSinkCnt != null">
+                audit_sink_cnt = #{auditSinkCnt},
+            </if>
+            <if test="auditSinkAbandonCnt != null">
+                audit_sink_abandon_cnt = #{auditSinkAbandonCnt},
+            </if>
+            <if test="auditTag != null">
+                audit_tag = #{auditTag},
+            </if>
+            <if test="auditSourceId != null">
+                audit_source_id = #{auditSourceId},
+            </if>
+            <if test="auditSinkId != null">
+                audit_sink_id = #{auditSinkId},
+            </if>
+            <if test="auditSinkAbandonId != null">
+                audit_sink_abandon_id = #{auditSinkAbandonId},
+            </if>
+            <if test="checkRatio != null">
+                check_ratio = #{checkRatio},
+            </if>
+            <if test="msgHandlerTag != null">
+                msg_handler_tag = #{msgHandlerTag},
+            </if>
+        </set>
+        where group_id = #{inLongGroupId,jdbcType=VARCHAR}
+              and stream_id = #{inLongStreamId,jdbcType=VARCHAR}
+              and topo_name = #{topoName,jdbcType=VARCHAR}
+              and partition_value = #{partitionValue,jdbcType=VARCHAR}
+              and partition_day = #{partitionDay,jdbcType=VARCHAR}
+    </update>
+</mapper>

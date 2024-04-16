@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<configuration status="WARN" monitorInterval="30" packages="org.apache.inlong.reco">
+    <Properties>
+        <property name="basePath">${sys:audit.log.path}</property>
+        <property name="log_pattern">%d{yyyy-MM-dd HH:mm:ss.SSS} -%5p ${PID:-} [%15.15t] %-30.30C{1.}:%L %m%n</property>
+        <property name="every_file_date">1</property>
+        <property name="every_file_size">1G</property>
+        <property name="output_log_level">DEBUG</property>
+        <property name="rolling_max">50</property>
+        <property name="info_fileName">${basePath}/info.log</property>
+        <property name="info_filePattern">${basePath}/info-%d{yyyy-MM-dd}-%i.log.gz</property>
+        <property name="info_max">10</property>
+        <property name="debug_fileName">${basePath}/debug.log</property>
+        <property name="debug_filePattern">${basePath}/debug-%d{yyyy-MM-dd}-%i.log.gz</property>
+        <property name="debug_max">10</property>
+        <property name="warn_fileName">${basePath}/warn.log</property>
+        <property name="warn_filePattern">${basePath}/warn-%d{yyyy-MM-dd}-%i.log.gz</property>
+        <property name="warn_max">10</property>
+        <property name="error_fileName">${basePath}/error.log</property>
+        <property name="error_filePattern">${basePath}/error-%d{yyyy-MM-dd}-%i.log.gz</property>
+        <property name="error_max">10</property>
+        <property name="console_print_level">DEBUG</property>
+        <property name="reco_water_max">10</property>
+        <property name="reco_water_fileName">${basePath}/monitor/reco_water.log</property>
+        <property name="reco_water_filePattern">${basePath}/reco_water-%d{yyyy-MM-dd}-%i.log.gz</property>
+        <property name="reco_trigger_water_max">10</property>
+        <property name="reco_trigger_water_fileName">${basePath}/monitor/reco_trigger_water.log</property>
+        <property name="reco_trigger_water_filePattern">${basePath}/monitor/reco_trigger_water-%d{yyyy-MM-dd}-%i.log.gz</property>
+        <property name="reco_sys_monitor_max">10</property>
+        <property name="reco_sys_monitor_fileName">${basePath}/monitor/reco_sys_monitor.log</property>
+        <property name="reco_sys_monitor_filePattern">${basePath}/monitor/reco_sys_monitor-%d{yyyy-MM-dd}-%i.log.gz</property>
+        <property name="api_notify_msg_max">10</property>
+        <property name="api_notify_msg_fileName">${basePath}/monitor/api_notify_msg.log</property>
+        <property name="api_notify_msg_filePattern">${basePath}/monitor/api_notify_msg-%d{yyyy-MM-dd}-%i.log.gz</property>
+        <property name="last_modify_time">15d</property>
+    </Properties>
+
+    <appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <ThresholdFilter level="${console_print_level}" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout pattern="${log_pattern}"/>
+        </Console>
+
+        <RollingFile name="DebugFile" fileName="${debug_fileName}" filePattern="${debug_filePattern}">
+            <PatternLayout pattern="${log_pattern}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="${every_file_date}"/>
+                <SizeBasedTriggeringPolicy size="${every_file_size}"/>]
+            </Policies>
+            <DefaultRolloverStrategy max="${debug_max}" />
+            <Filters>
+                <ThresholdFilter level="WARN" onMatch="DENY" onMismatch="NEUTRAL"/>
+                <ThresholdFilter level="INFO" onMatch="DENY" onMismatch="NEUTRAL"/>
+                <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </RollingFile>
+
+        <RollingFile name="InfoFile" fileName="${info_fileName}" filePattern="${info_filePattern}">
+            <PatternLayout pattern="${log_pattern}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="${every_file_date}"/>
+                <SizeBasedTriggeringPolicy size="${every_file_size}"/>]
+            </Policies>
+            <DefaultRolloverStrategy max="${info_max}">
+                <Delete basePath="${basePath}" maxDepth="1">
+                    <IfFileName glob="info*.log.gz"/>
+                    <IfLastModified age="${last_modify_time}"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+            <Filters>
+                <ThresholdFilter level="WARN" onMatch="DENY" onMismatch="NEUTRAL"/>
+                <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </RollingFile>
+
+        <RollingFile name="WarnFile" fileName="${warn_fileName}" filePattern="${warn_filePattern}">
+            <PatternLayout pattern="${log_pattern}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="${every_file_date}"/>
+                <SizeBasedTriggeringPolicy size="${every_file_size}"/>]
+            </Policies>
+            <DefaultRolloverStrategy max="${warn_max}">
+                <Delete basePath="${basePath}" maxDepth="1">
+                    <IfFileName glob="warn*.log.gz"/>
+                    <IfLastModified age="${last_modify_time}"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+            <Filters>
+                <ThresholdFilter level="ERROR" onMatch="DENY" onMismatch="NEUTRAL"/>
+                <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </RollingFile>
+
+        <RollingFile name="ErrorFile" fileName="${error_fileName}" filePattern="${error_filePattern}">
+            <PatternLayout pattern="${log_pattern}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="${every_file_date}"/>
+                <SizeBasedTriggeringPolicy size="${every_file_size}"/>]
+            </Policies>
+            <DefaultRolloverStrategy max="${error_max}">
+                <Delete basePath="${basePath}" maxDepth="1">
+                    <IfFileName glob="error*.log.gz"/>
+                    <IfLastModified age="${last_modify_time}"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+            <Filters>
+                <ThresholdFilter level="FATAL" onMatch="DENY" onMismatch="NEUTRAL"/>
+                <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </RollingFile>
+
+        <RollingFile name="RecoWaterFile" fileName="${reco_water_fileName}" filePattern="${reco_water_filePattern}">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="${every_file_date}"/>
+                <SizeBasedTriggeringPolicy size="${every_file_size}"/>]
+            </Policies>
+            <DefaultRolloverStrategy max="${reco_water_max}">
+                <Delete basePath="${basePath}" maxDepth="1">
+                    <IfFileName glob="reco_water_*.log.gz"/>
+                    <IfLastModified age="${last_modify_time}"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+            <Filters>
+                <ThresholdFilter level="WARN" onMatch="DENY" onMismatch="NEUTRAL"/>
+                <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </RollingFile>
+
+        <RollingFile name="RecoTriggerWaterFile" fileName="${reco_trigger_water_fileName}" filePattern="${reco_trigger_water_filePattern}">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="${every_file_date}"/>
+                <SizeBasedTriggeringPolicy size="${every_file_size}"/>]
+            </Policies>
+            <DefaultRolloverStrategy max="${reco_trigger_water_max}">
+                <Delete basePath="${basePath}" maxDepth="1">
+                    <IfFileName glob="reco_trigger_water_*.log.gz"/>
+                    <IfLastModified age="${last_modify_time}"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+            <Filters>
+                <ThresholdFilter level="WARN" onMatch="DENY" onMismatch="NEUTRAL"/>
+                <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </RollingFile>
+
+        <RollingFile name="RecoSysMonitorFile" fileName="${reco_sys_monitor_fileName}" filePattern="${reco_sys_monitor_filePattern}">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="${every_file_date}"/>
+                <SizeBasedTriggeringPolicy size="${every_file_size}"/>]
+            </Policies>
+            <DefaultRolloverStrategy max="${reco_sys_monitor_max}">
+                <Delete basePath="${basePath}" maxDepth="1">
+                    <IfFileName glob="reco_sys_monitor_*.log.gz"/>
+                    <IfLastModified age="${last_modify_time}"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+            <Filters>
+                <ThresholdFilter level="WARN" onMatch="DENY" onMismatch="NEUTRAL"/>
+                <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </RollingFile>
+        <RollingFile name="ApiNotifyMsgFile" fileName="${api_notify_msg_fileName}" filePattern="${api_notify_msg_filePattern}">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="${every_file_date}"/>
+                <SizeBasedTriggeringPolicy size="${every_file_size}"/>]
+            </Policies>
+            <DefaultRolloverStrategy max="${api_notify_msg_max}">
+                <Delete basePath="${basePath}" maxDepth="1">
+                    <IfFileName glob="api_notify_msg_*.log.gz"/>
+                    <IfLastModified age="${last_modify_time}"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+            <Filters>
+                <ThresholdFilter level="WARN" onMatch="DENY" onMismatch="NEUTRAL"/>
+                <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </RollingFile>
+    </appenders>
+
+    <loggers>
+        <logger name="RecoTriggerWaterLog" level="info" additivity="false">
+            <appender-ref ref="RecoTriggerWaterFile"/>
+        </logger>
+        <logger name="RecoWaterLog" level="info" additivity="false">
+            <appender-ref ref="RecoWaterFile"/>
+        </logger>
+        <logger name="RecoSysMonitorLog" level="info" additivity="false">
+            <appender-ref ref="RecoSysMonitorFile"/>
+        </logger>
+        <logger name="ApiNotifyMsgLog" level="info" additivity="false">
+            <appender-ref ref="ApiNotifyMsgFile"/>
+        </logger>
+        <logger name="org.apache.pulsar" level="info" additivity="false">
+            <appender-ref ref="InfoFile"/>
+        </logger>
+        <root level="${output_log_level}">
+            <appender-ref ref="Console"/>
+            <appender-ref ref="DebugFile"/>
+            <appender-ref ref="InfoFile"/>
+            <appender-ref ref="WarnFile"/>
+            <appender-ref ref="ErrorFile"/>
+        </root>
+    </loggers>
+</configuration>
